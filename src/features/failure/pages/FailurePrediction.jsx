@@ -18,7 +18,7 @@ export default function FailurePrediction({ setActiveRoute }) {
       <SectionHeader
         eyebrow="Prediction engine"
         title="Diet Failure Prediction System"
-        description="A full risk engine that reads behavior signals, calculates failure probability, explains the causes, and recommends the next action before the diet breaks."
+        description="A full risk engine that reads calories, protein, sleep, mood, stress, cravings, and wearable data to calculate failure probability and explain the causes."
       />
 
       <FailureSystemFlow />
@@ -29,7 +29,7 @@ export default function FailurePrediction({ setActiveRoute }) {
           <h2>No failure risk calculated yet</h2>
           <p>
             The failure prediction system now uses only your saved daily
-            check-in. Save sleep, mood, stress, cravings, calories, and protein
+            check-in. Save calories, protein, sleep, mood, stress, and cravings
             before this page calculates risk.
           </p>
 
@@ -47,7 +47,7 @@ export default function FailurePrediction({ setActiveRoute }) {
 
           <section className="two-column">
             <RiskBreakdown insights={behaviorInsights} />
-            <ScenarioSimulator baseScore={score} />
+            <ScenarioSimulator baseScore={score} healthData={healthData} />
           </section>
 
           <InterventionPlan healthData={healthData} />

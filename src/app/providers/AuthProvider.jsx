@@ -20,6 +20,35 @@ const defaultPreferences = {
   remindWater: true
 };
 
+const localAdminAccount = {
+  id: "admin-001",
+  name: "Admin",
+  username: "admin",
+  email: "admin@realityenginex.local",
+  password: "admin123",
+  role: "admin",
+  dietProfile: {
+    completed: true
+  },
+  preferences: defaultPreferences,
+  notificationLog: [],
+  dailyHistory: []
+};
+
+function migrateStarterAccount(account) {
+  if (account.id === "user-001" && account.username !== "mahmoud") {
+    return {
+      ...account,
+      name: "Mahmoud",
+      username: "mahmoud",
+      email: "mahmoud@example.com",
+      password: ""
+    };
+  }
+
+  return account;
+}
+
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -28,13 +57,14 @@ function loadAccount() {
   try {
     const storedAccount = window.localStorage.getItem(STORAGE_KEY);
     const parsedAccount = storedAccount ? JSON.parse(storedAccount) : {};
+    const safeAccount = migrateStarterAccount(parsedAccount);
 
     return {
       ...mockUser,
-      ...parsedAccount,
+      ...safeAccount,
       preferences: {
         ...defaultPreferences,
-        ...(parsedAccount.preferences || {})
+        ...(safeAccount.preferences || {})
       }
     };
   } catch {
@@ -236,22 +266,64 @@ export function AuthProvider({ children }) {
     resetExpiredDailyCheckIn();
   }, [user, account.dailyCheckIn?.checkInDate]);
 
-  async function login(identifier, password) {
+  async function login(identifier, password, requestedRole = "user") {
+    if (!identifier.trim() || !password) {
+      return {
+        ok: false,
+        message: "Enter your username/email and password."
+      };
+    }
+
     try {
       const result = await apiClient.post("/auth/login", {
         identifier,
         password
       });
 
+      if ((result.account.role || "user") !== requestedRole) {
+        return {
+          ok: false,
+          message:
+            requestedRole === "admin"
+              ? "This is not an admin account."
+              : "Use Admin login for admin accounts."
+        };
+      }
+
       setAccount(result.account);
-      saveAccount(result.account);
+      if (result.account.role !== "admin") {
+        saveAccount(result.account);
+      }
       setUser(result.account);
       return { ok: true };
     } catch {
-      // Fall back to the local demo account if the API is offline.
+      // The app can still run locally when the API server is not started.
     }
 
     const normalizedIdentifier = identifier.trim().toLowerCase();
+    const matchesAdmin =
+      localAdminAccount.username === normalizedIdentifier ||
+      localAdminAccount.email === normalizedIdentifier;
+
+    if (matchesAdmin && localAdminAccount.password === password) {
+      if (requestedRole !== "admin") {
+        return {
+          ok: false,
+          message: "Use Admin login for admin accounts."
+        };
+      }
+
+      setUser(localAdminAccount);
+      return { ok: true };
+    }
+
+    if (requestedRole === "admin") {
+      return {
+        ok: false,
+        message: "Admin username or password is incorrect."
+      };
+    }
+
     const matchesIdentifier =
       account.username.toLowerCase() === normalizedIdentifier ||
       account.email.toLowerCase() === normalizedIdentifier;
@@ -288,6 +360,7 @@ export function AuthProvider({ children }) {
       ...account,
       ...payload,
       id: `user-${Date.now()}`,
+      role: "user",
       age: "",
       goal: "",
       heightCm: "",

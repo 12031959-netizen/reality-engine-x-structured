@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Bluetooth, FileCheck2, HeartPulse, Watch } from "lucide-react";
+import { useRef, useState } from "react";
+import { Bluetooth, FileUp, Smartphone } from "lucide-react";
 import SectionHeader from "../../../components/shared/SectionHeader";
 import { useAuth } from "../../../hooks/useAuth";
 import WearableCard from "../components/WearableCard";
@@ -140,46 +140,14 @@ function parseHeartRate(value) {
 
 export default function WearableData() {
   const { account, saveWearableData } = useAuth();
+  const fileInputRef = useRef(null);
   const [saved, setSaved] = useState(false);
   const [importMessage, setImportMessage] = useState("");
   const [importError, setImportError] = useState("");
+  const [appConnectionMessage, setAppConnectionMessage] = useState("");
   const [bluetoothMessage, setBluetoothMessage] = useState("");
   const [bluetoothError, setBluetoothError] = useState("");
   const wearableData = account.wearableData || {};
-  const integrationCards = [
-    {
-      label: "Apple Health",
-      status: wearableData.appleHealthActive ? "Active" : "Ready for export",
-      description: wearableData.appleHealthActive
-        ? "Apple Health export data is saved."
-        : "Import Apple Health export.xml to activate.",
-      icon: HeartPulse
-    },
-    {
-      label: "Apple Watch",
-      status: wearableData.appleWatchActive ? "Active" : "Waiting for watch data",
-      description: wearableData.appleWatchActive
-        ? "Apple Watch records were found in the Health export."
-        : "Import an Apple Health export that includes Apple Watch records.",
-      icon: Watch
-    },
-    {
-      label: "Exported File",
-      status: wearableData.exportActive ? "Imported" : "Not imported",
-      description: wearableData.exportActive
-        ? wearableData.source
-        : "Upload JSON, CSV, or Apple Health export.xml.",
-      icon: FileCheck2
-    },
-    {
-      label: "Bluetooth Sensor",
-      status: wearableData.bluetoothActive ? "Active" : "Ready",
-      description: wearableData.bluetoothActive
-        ? "A Bluetooth heart-rate sensor has sent data."
-        : "Connect a compatible BLE heart-rate strap or sensor.",
-      icon: Bluetooth
-    }
-  ];
 
   function saveData(data) {
     saveWearableData(data);
@@ -205,6 +173,7 @@ export default function WearableData() {
         };
 
         saveData(nextWearableData);
+        setAppConnectionMessage("");
         setImportError("");
         setImportMessage("Phone health data imported and saved.");
       } catch (error) {
@@ -214,6 +183,14 @@ export default function WearableData() {
     };
 
     reader.readAsText(file);
+  }
+
+  function handleAppConnection() {
+    setImportError("");
+    setBluetoothError("");
+    setAppConnectionMessage(
+      "Automatic Apple Health and Apple Watch sync needs a native iPhone app with HealthKit permission. This website is ready to receive that data through the backend; until that app exists, use the file upload option here."
+    );
   }
 
   async function handleBluetoothConnect() {
@@ -269,26 +246,100 @@ export default function WearableData() {
       <SectionHeader
         eyebrow="Wearable integration"
         title="Wearable Data"
-        description="Import phone or Apple Watch health exports, or connect a compatible Bluetooth heart-rate sensor. Apple Watch itself does not expose Health data to websites over Bluetooth."
+        description="Choose one source. The app will save the data here and use it in Analytics, Predictions, and Failure Risk."
       />
 
-      <section className="integration-grid">
-        {integrationCards.map((integration) => {
-          const Icon = integration.icon;
+      <section className="panel wearable-source-panel">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Data source</p>
+            <h2>Connect your phone, watch, or file</h2>
+          </div>
+        </div>
 
-          return (
-            <article className="panel integration-card" key={integration.label}>
-              <div className="stat-icon">
-                <Icon size={22} />
-              </div>
-              <div>
-                <p className="eyebrow">{integration.status}</p>
-                <h2>{integration.label}</h2>
-                <p>{integration.description}</p>
-              </div>
-            </article>
-          );
-        })}
+        <div className="wearable-source-grid">
+          <article className="wearable-source-card">
+            <div className="stat-icon">
+              <Smartphone size={22} />
+            </div>
+            <div>
+              <p className="eyebrow">Phone app</p>
+              <h3>Connect iPhone / Health app</h3>
+              <p>
+                Use this path when a native iPhone app is connected to Apple
+                Health and sends the data to this website.
+              </p>
+            </div>
+            <button
+              className="btn btn-md btn-secondary"
+              type="button"
+              onClick={handleAppConnection}
+            >
+              Check App Connection
+            </button>
+          </article>
+
+          <article className="wearable-source-card wearable-source-card-primary">
+            <div className="stat-icon">
+              <FileUp size={22} />
+            </div>
+            <div>
+              <p className="eyebrow">Apple Watch / phone / file</p>
+              <h3>Upload health export</h3>
+              <p>
+                Upload Apple Health <strong>export.xml</strong>, JSON, or CSV.
+                The page extracts steps, heart rate, active minutes, and
+                recovery when they exist.
+              </p>
+            </div>
+            <button
+              className="btn btn-md btn-primary"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Choose Health File
+            </button>
+            <input
+              ref={fileInputRef}
+              className="visually-hidden"
+              type="file"
+              accept=".json,.csv,.xml,.txt"
+              onChange={handleHealthImport}
+            />
+          </article>
+
+          <article className="wearable-source-card">
+            <div className="stat-icon">
+              <Bluetooth size={22} />
+            </div>
+            <div>
+              <p className="eyebrow">Bluetooth</p>
+              <h3>Connect heart sensor</h3>
+              <p>
+                Connect a compatible BLE heart-rate strap or sensor. Apple Watch
+                health history still needs Health export or an iPhone app.
+              </p>
+            </div>
+            <button
+              className="btn btn-md btn-secondary"
+              type="button"
+              onClick={handleBluetoothConnect}
+            >
+              Connect Sensor
+            </button>
+          </article>
+        </div>
+
+        {appConnectionMessage && (
+          <div className="toast toast-info">{appConnectionMessage}</div>
+        )}
+        {importMessage && <div className="toast toast-success">{importMessage}</div>}
+        {importError && <div className="toast toast-error">{importError}</div>}
+        {bluetoothMessage && (
+          <div className="toast toast-success">{bluetoothMessage}</div>
+        )}
+        {bluetoothError && <div className="toast toast-error">{bluetoothError}</div>}
+        {saved && <div className="toast toast-success">Wearable data saved.</div>}
       </section>
 
       <section className="stats-grid">
@@ -315,65 +366,6 @@ export default function WearableData() {
           value={valueOrMissing(wearableData.recoveryScore, "%")}
           description={wearableData.source || "Not connected"}
         />
-      </section>
-
-      <section className="two-column">
-        <article className="panel health-import-panel">
-          <p className="eyebrow">Phone health import</p>
-          <h2>Connect from Health export</h2>
-          <p>
-            Export your phone health data, then import a JSON/CSV file or the
-            unzipped Apple Health <strong>export.xml</strong>. The app reads the
-            latest available day. If your iPhone gives you
-            <strong> export.zip</strong>, unzip it first and upload the
-            <strong> apple_health_export/export.xml</strong> file.
-          </p>
-
-          <label className="file-import">
-            <span>Choose Apple Health / phone health file</span>
-            <input
-              type="file"
-              accept=".json,.csv,.xml,.txt"
-              onChange={handleHealthImport}
-            />
-          </label>
-
-          {importMessage && <div className="toast toast-success">{importMessage}</div>}
-          {importError && <div className="toast toast-error">{importError}</div>}
-          {saved && <div className="toast toast-success">Wearable data saved.</div>}
-        </article>
-
-        <article className="panel health-import-panel">
-          <p className="eyebrow">Bluetooth connection</p>
-          <h2>Connect BLE heart sensor</h2>
-          <p>
-            Use this for compatible Bluetooth Low Energy heart-rate straps or
-            sensors. Apple Watch health data still requires Health export or a
-            native iPhone HealthKit app.
-          </p>
-
-          <button
-            className="btn btn-md btn-primary"
-            type="button"
-            onClick={handleBluetoothConnect}
-          >
-            <Bluetooth size={18} />
-            Connect Bluetooth Heart Sensor
-          </button>
-
-          <div className="tag-row">
-            <span>BLE heart-rate service</span>
-            <span>Chrome / Edge support</span>
-            <span>HTTPS or localhost</span>
-          </div>
-
-          {bluetoothMessage && (
-            <div className="toast toast-success">{bluetoothMessage}</div>
-          )}
-          {bluetoothError && (
-            <div className="toast toast-error">{bluetoothError}</div>
-          )}
-        </article>
       </section>
 
       <article className="panel">

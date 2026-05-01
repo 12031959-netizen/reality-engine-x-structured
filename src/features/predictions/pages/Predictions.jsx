@@ -10,7 +10,7 @@ export default function Predictions() {
       <SectionHeader
         eyebrow="AI prediction center"
         title="Predictions"
-        description="Predictions are generated only from your diet setup and latest daily check-in."
+        description="Predictions are generated from your diet setup, daily check-in, and uploaded wearable or phone health data."
       />
 
       {predictions.length === 0 ? (
@@ -18,8 +18,9 @@ export default function Predictions() {
           <p className="eyebrow">No entered data</p>
           <h2>No predictions yet</h2>
           <p>
-            Save a daily check-in first. The prediction center will not show
-            sample predictions that you did not create data for.
+            Save a daily check-in or upload wearable data first. The prediction
+            center will not show sample predictions that you did not create data
+            for.
           </p>
         </article>
       ) : (

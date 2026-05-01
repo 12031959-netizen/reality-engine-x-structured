@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import routes from "./routes";
 import NotFound from "../components/shared/NotFound";
@@ -12,12 +12,31 @@ export default function App() {
   const { user } = useAuth();
   const [activeRoute, setActiveRoute] = useState("dashboard");
   const [authRoute, setAuthRoute] = useState("login");
+  const userRole = user?.role === "admin" ? "admin" : "user";
+  const availableRoutes = useMemo(() => {
+    return routes.filter((route) => !route.roles || route.roles.includes(userRole));
+  }, [userRole]);
 
   const currentRoute = useMemo(() => {
-    return routes.find((route) => route.key === activeRoute);
-  }, [activeRoute]);
+    return (
+      availableRoutes.find((route) => route.key === activeRoute) ||
+      availableRoutes[0]
+    );
+  }, [availableRoutes, activeRoute]);
 
   const Page = currentRoute?.component || NotFound;
+
+  useEffect(() => {
+    if (!user) return;
+
+    const canAccessActiveRoute = availableRoutes.some(
+      (route) => route.key === activeRoute
+    );
+
+    if (!canAccessActiveRoute) {
+      setActiveRoute(userRole === "admin" ? "admin" : "dashboard");
+    }
+  }, [activeRoute, availableRoutes, user, userRole]);
 
   if (!user) {
     const AuthPage =
@@ -30,13 +49,13 @@ export default function App() {
     return <AuthPage setAuthRoute={setAuthRoute} />;
   }
 
-  if (!user.dietProfile?.completed) {
+  if (user.role !== "admin" && !user.dietProfile?.completed) {
     return <Onboarding />;
   }
 
   return (
     <DashboardLayout
-      routes={routes}
+      routes={availableRoutes}
       activeRoute={activeRoute}
       setActiveRoute={setActiveRoute}
     >

@@ -10,6 +10,7 @@ import Feedback from "../features/feedback/pages/Feedback";
 import AboutUs from "../features/about/pages/AboutUs";
 import NotificationCenter from "../features/notifications/components/NotificationCenter";
 import Settings from "../features/settings/pages/Settings";
+import AdminDashboard from "../features/admin/pages/AdminDashboard";
 import {
   Activity,
   BarChart3,
@@ -23,81 +24,101 @@ import {
   KeyRound,
   MessageSquare,
   Settings as SettingsIcon,
+  ShieldCheck,
   Watch
 } from "lucide-react";
 
 const routes = [
   {
+    key: "admin",
+    label: "Admin",
+    icon: ShieldCheck,
+    component: AdminDashboard,
+    roles: ["admin"]
+  },
+  {
     key: "dashboard",
     label: "Dashboard",
     icon: Home,
-    component: Dashboard
+    component: Dashboard,
+    roles: ["user"]
   },
   {
     key: "checkin",
     label: "Daily Check-In",
     icon: ClipboardCheck,
-    component: DailyCheckIn
+    component: DailyCheckIn,
+    roles: ["user"]
   },
   {
     key: "wearable",
     label: "Wearable Data",
     icon: Watch,
-    component: WearableData
+    component: WearableData,
+    roles: ["user"]
   },
   {
     key: "history",
     label: "Daily History",
     icon: CalendarDays,
-    component: DailyHistory
+    component: DailyHistory,
+    roles: ["user"]
   },
   {
     key: "analytics",
     label: "Analytics",
     icon: BarChart3,
-    component: Analytics
+    component: Analytics,
+    roles: ["user"]
   },
   {
     key: "predictions",
     label: "Predictions",
     icon: Brain,
-    component: Predictions
+    component: Predictions,
+    roles: ["user"]
   },
   {
     key: "failure",
     label: "Failure Risk",
     icon: Gauge,
-    component: FailurePrediction
+    component: FailurePrediction,
+    roles: ["user"]
   },
   {
     key: "account",
     label: "Users / Pass",
     icon: KeyRound,
-    component: UserDashboard
+    component: UserDashboard,
+    roles: ["user"]
   },
   {
     key: "feedback",
     label: "Feedback",
     icon: MessageSquare,
-    component: Feedback
+    component: Feedback,
+    roles: ["user"]
   },
   {
     key: "notifications",
     label: "Notifications",
     icon: BellRing,
-    component: NotificationCenter
+    component: NotificationCenter,
+    roles: ["user"]
   },
   {
     key: "about",
     label: "About Us",
     icon: Info,
-    component: AboutUs
+    component: AboutUs,
+    roles: ["user", "admin"]
   },
   {
     key: "settings",
     label: "Settings",
     icon: SettingsIcon,
-    component: Settings
+    component: Settings,
+    roles: ["user"]
   }
 ];
 

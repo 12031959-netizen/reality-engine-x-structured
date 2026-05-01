@@ -1,5 +1,37 @@
 const signals = [
   {
+    label: "Calories",
+    getValue: (data) =>
+      data.calories.consumed
+        ? data.calories.target
+          ? `${data.calories.consumed} / ${data.calories.target}`
+          : `${data.calories.consumed}`
+        : "Not entered",
+    getScore: (data) => {
+      if (!data.calories.consumed || !data.calories.target) return 0;
+      const gap = Math.abs(data.calories.consumed - data.calories.target);
+      return Math.max(0, Math.round(100 - (gap / data.calories.target) * 100));
+    },
+    target: "Consumed / target"
+  },
+  {
+    label: "Protein",
+    getValue: (data) =>
+      data.protein.consumed
+        ? data.protein.target
+          ? `${data.protein.consumed}g / ${data.protein.target}g`
+          : `${data.protein.consumed}g`
+        : "Not entered",
+    getScore: (data) => {
+      if (!data.protein.consumed || !data.protein.target) return 0;
+      return Math.min(
+        100,
+        Math.round((data.protein.consumed / data.protein.target) * 100)
+      );
+    },
+    target: "Consumed / target"
+  },
+  {
     label: "Sleep",
     getValue: (data) => `${data.sleep.lastNight}h`,
     getScore: (data) => Math.min(100, Math.round((data.sleep.lastNight / 8) * 100)),
@@ -22,20 +54,6 @@ const signals = [
     getValue: (data) => `${data.cravings.score}/10`,
     getScore: (data) => Math.max(0, 100 - data.cravings.score * 10),
     target: "Lower is safer"
-  },
-  {
-    label: "Calories",
-    getValue: (data) =>
-      data.calories.consumed ? `${data.calories.consumed}` : "Not entered",
-    getScore: (data) => (data.calories.consumed ? 100 : 0),
-    target: "Entered value only"
-  },
-  {
-    label: "Protein",
-    getValue: (data) =>
-      data.protein.consumed ? `${data.protein.consumed}g` : "Not entered",
-    getScore: (data) => (data.protein.consumed ? 100 : 0),
-    target: "Entered value only"
   }
 ];
 
@@ -45,7 +63,7 @@ export default function SignalMonitor({ healthData }) {
       <div className="panel-header">
         <div>
           <p className="eyebrow">System inputs</p>
-          <h2>Your latest check-in signals</h2>
+          <h2>Diet and behavior signals</h2>
         </div>
       </div>
 

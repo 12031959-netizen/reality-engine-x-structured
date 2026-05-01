@@ -1,5 +1,63 @@
 export function analyzeBehavior(healthData) {
   const insights = [];
+  const calories = healthData.calories.consumed;
+  const calorieTarget = healthData.calories.target;
+  const protein = healthData.protein.consumed;
+  const proteinTarget = healthData.protein.target;
+
+  if (calories > 0) {
+    const calorieGap = calorieTarget
+      ? Math.round(((calories - calorieTarget) / calorieTarget) * 100)
+      : null;
+
+    insights.push({
+      label: "Calories vs diet target",
+      value: calorieTarget ? `${calories} / ${calorieTarget}` : `${calories}`,
+      impact:
+        calorieGap === null || Math.abs(calorieGap) <= 10
+          ? "Strong"
+          : Math.abs(calorieGap) <= 20
+            ? "Medium"
+            : "High",
+      description:
+        calorieTarget
+          ? `Your calories are ${Math.abs(calorieGap)}% ${calorieGap >= 0 ? "above" : "below"} the target estimated from your diet profile.`
+          : "Calories were entered, but a target could not be calculated because profile data is incomplete."
+    });
+  }
+
+  if (protein > 0) {
+    const proteinGap = proteinTarget
+      ? Math.max(0, Math.round(((proteinTarget - protein) / proteinTarget) * 100))
+      : null;
+
+    insights.push({
+      label: "Protein vs diet target",
+      value: proteinTarget ? `${protein}g / ${proteinTarget}g` : `${protein}g`,
+      impact:
+        proteinGap === null || proteinGap === 0
+          ? "Strong"
+          : proteinGap <= 25
+            ? "Medium"
+            : "High",
+      description:
+        proteinTarget
+          ? proteinGap === 0
+            ? "Your protein meets the estimated target for diet success."
+            : `Protein is about ${proteinGap}% under the estimated target.`
+          : "Protein was entered, but a target could not be calculated because profile data is incomplete."
+    });
+  }
+
+  if (!calories || !protein) {
+    insights.push({
+      label: "Nutrition data missing",
+      value: "Incomplete",
+      impact: "High",
+      description:
+        "Calories and protein are required before the diet success risk can be calculated clearly."
+    });
+  }
 
   if (healthData.sleep.lastNight < 6) {
     insights.push({
@@ -41,23 +99,33 @@ export function analyzeBehavior(healthData) {
     });
   }
 
-  if (healthData.calories.consumed > 0) {
+  if (healthData.wearable?.steps > 0) {
     insights.push({
-      label: "Calories entered",
-      value: `${healthData.calories.consumed}`,
-      impact: "Input",
+      label: "Uploaded steps",
+      value: `${healthData.wearable.steps}`,
+      impact: healthData.wearable.steps < 3000 ? "Medium" : "Input",
       description:
-        "This value came from your latest daily check-in and is used as context, not a fake target comparison."
+        "This value came from your uploaded phone or wearable health data."
     });
   }
 
-  if (healthData.protein.consumed > 0) {
+  if (healthData.wearable?.heartRate > 0) {
     insights.push({
-      label: "Protein entered",
-      value: `${healthData.protein.consumed}g`,
-      impact: "Input",
+      label: "Uploaded heart rate",
+      value: `${healthData.wearable.heartRate} bpm`,
+      impact: healthData.wearable.heartRate > 90 ? "Medium" : "Input",
       description:
-        "This protein value came from your latest daily check-in."
+        "This heart-rate value is used as recovery context for the risk calculation."
+    });
+  }
+
+  if (healthData.wearable?.recoveryScore > 0) {
+    insights.push({
+      label: "Uploaded recovery",
+      value: `${healthData.wearable.recoveryScore}%`,
+      impact: healthData.wearable.recoveryScore < 45 ? "Medium" : "Input",
+      description:
+        "This recovery score came from the wearable data saved in your account."
     });
   }
 

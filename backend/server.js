@@ -10,10 +10,11 @@ const PORT = Number(process.env.PORT || 5000);
 
 const defaultAccount = {
   id: "user-001",
-  name: "Karim",
-  username: "karim",
-  email: "karim@example.com",
-  password: "reality123",
+  name: "Mahmoud",
+  username: "mahmoud",
+  email: "mahmoud@example.com",
+  password: "",
+  role: "user",
   dietProfile: {
     completed: false
   },
@@ -33,14 +34,68 @@ const defaultAccount = {
   dailyHistory: []
 };
 
+const adminAccount = {
+  id: "admin-001",
+  name: "Admin",
+  username: "admin",
+  email: "admin@realityenginex.local",
+  password: "admin123",
+  role: "admin",
+  dietProfile: {
+    completed: true
+  },
+  preferences: {
+    dailyReminders: false,
+    riskAlerts: true,
+    weeklySummary: true,
+    privateMode: false,
+    hourlyReminders: false,
+    appNotifications: false,
+    emailNotifications: false,
+    remindMood: false,
+    remindFood: false,
+    remindWater: false
+  },
+  notificationLog: [],
+  dailyHistory: []
+};
+
+function migrateStarterAccount(account) {
+  if (account.id === "user-001" && account.username !== "mahmoud") {
+    return {
+      ...account,
+      name: "Mahmoud",
+      username: "mahmoud",
+      email: "mahmoud@example.com",
+      password: ""
+    };
+  }
+
+  return account;
+}
+
 async function ensureDatabase() {
   await mkdir(DATA_DIR, { recursive: true });
 
   try {
-    await readFile(DB_PATH, "utf8");
+    const database = JSON.parse(await readFile(DB_PATH, "utf8"));
+    const hasAdmin = (database.accounts || []).some(
+      (account) => account.role === "admin" || account.id === adminAccount.id
+    );
+    const migratedAccounts = [
+      ...(hasAdmin ? [] : [adminAccount]),
+      ...(database.accounts || []).map(migrateStarterAccount)
+    ];
+
+    if (JSON.stringify(migratedAccounts) !== JSON.stringify(database.accounts)) {
+      await writeDatabase({
+        ...database,
+        accounts: migratedAccounts
+      });
+    }
   } catch {
     await writeDatabase({
-      accounts: [defaultAccount],
+      accounts: [adminAccount, defaultAccount],
       feedback: []
     });
   }
@@ -109,6 +164,10 @@ function withoutPassword(account) {
   return safeAccount;
 }
 
+function publicAccounts(accounts) {
+  return accounts.map(withoutPassword);
+}
+
 function findAccount(database, accountId) {
   return database.accounts.find((account) => account.id === accountId);
 }
@@ -145,6 +204,15 @@ async function handleRequest(request, response) {
     if (request.method === "POST" && url.pathname === "/auth/login") {
       const { identifier = "", password = "" } = await readBody(request);
       const normalizedIdentifier = identifier.trim().toLowerCase();
+
+      if (!normalizedIdentifier || !password) {
+        sendJson(response, 400, {
+          ok: false,
+          message: "Enter your username/email and password."
+        });
+        return;
+      }
+
       const account = database.accounts.find(
         (item) =>
           item.username?.toLowerCase() === normalizedIdentifier ||
@@ -160,6 +228,15 @@ async function handleRequest(request, response) {
       }
 
       sendJson(response, 200, { ok: true, account });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/admin/accounts") {
+      sendJson(response, 200, {
+        accounts: publicAccounts(
+          database.accounts.filter((account) => account.role !== "admin")
+        )
+      });
       return;
     }
 
@@ -183,6 +260,7 @@ async function handleRequest(request, response) {
         ...defaultAccount,
         ...payload,
         id: `user-${Date.now()}`,
+        role: "user",
         dietProfile: {
           completed: false
         },

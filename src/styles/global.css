@@ -444,6 +444,12 @@ a {
   box-shadow: 0 16px 36px rgba(14, 165, 233, 0.25);
 }
 
+.btn-secondary {
+  color: var(--text-main);
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  background: rgba(14, 165, 233, 0.12);
+}
+
 .btn-ghost {
   color: var(--text-main);
   border: 1px solid var(--border);
@@ -949,10 +955,65 @@ input[type="range"] {
   border: 1px solid rgba(239, 68, 68, 0.28);
 }
 
+.toast-info {
+  color: #dbeafe;
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
 .health-import-panel {
   display: grid;
   align-content: start;
   gap: 14px;
+}
+
+.wearable-source-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.wearable-source-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wearable-source-card {
+  min-height: 270px;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+}
+
+.wearable-source-card-primary {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.wearable-source-card h3 {
+  margin: 6px 0 8px;
+  font-size: 20px;
+}
+
+.wearable-source-card p {
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .integration-grid {
@@ -1346,6 +1407,30 @@ input[type="range"] {
   font-weight: 800;
 }
 
+.role-selector {
+  padding: 5px;
+  border-radius: 16px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.role-selector button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  font-weight: 800;
+}
+
+.role-selector button.active {
+  color: white;
+  background: linear-gradient(135deg, var(--primary-strong), var(--success));
+}
+
 .demo-credentials,
 .credential-list {
   display: grid;
@@ -1412,6 +1497,93 @@ input[type="range"] {
   margin-top: 6px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-header-actions {
+  margin-top: 0;
+}
+
+.admin-stat-card {
+  min-height: 170px;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+}
+
+.admin-stat-card h2 {
+  margin: 0;
+  font-size: clamp(30px, 5vw, 44px);
+}
+
+.admin-stat-card span {
+  color: var(--text-muted);
+}
+
+.admin-user-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-user-row {
+  width: 100%;
+  padding: 14px;
+  border-radius: 16px;
+  text-align: left;
+  color: var(--text-main);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  display: grid;
+  gap: 5px;
+}
+
+.admin-user-row.active {
+  border-color: rgba(34, 197, 94, 0.38);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.admin-user-row span {
+  font-weight: 800;
+}
+
+.admin-user-row small {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-risk-pill {
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: var(--primary);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.admin-history-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.admin-history-row {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-history-row span {
+  color: var(--text-muted);
 }
 
 .auth-card h1,
@@ -1723,12 +1895,14 @@ input[type="range"] {
 
   .stats-grid,
   .two-column,
+  .admin-dashboard-grid,
   .checkin-layout,
   .form-grid,
   .about-grid,
   .failure-system-flow,
   .history-columns,
   .integration-grid,
+  .wearable-source-grid,
   .signal-grid,
   .settings-grid,
   .profile-summary {

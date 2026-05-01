@@ -3,12 +3,14 @@ import { Activity, Brain, ClipboardCheck, ShieldAlert } from "lucide-react";
 const steps = [
   {
     title: "Collect signals",
-    description: "Calories, protein, sleep, mood, stress, and cravings are read from the daily check-in.",
+    description:
+      "Calories, protein, sleep, mood, stress, cravings, and wearable data are read from your saved records.",
     icon: Activity
   },
   {
     title: "Score risk",
-    description: "The engine gives each weak signal a weight, then converts the combined pressure into a failure probability.",
+    description:
+      "The engine combines nutrition gaps and behavior pressure into one failure probability.",
     icon: Brain
   },
   {

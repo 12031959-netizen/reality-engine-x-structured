@@ -4,14 +4,15 @@ import Input from "../../../components/ui/Input";
 import { useAuth } from "../../../hooks/useAuth";
 
 export default function Login({ setAuthRoute }) {
-  const { account, login } = useAuth();
-  const [identifier, setIdentifier] = useState(account.username);
-  const [password, setPassword] = useState(account.password);
+  const { login } = useAuth();
+  const [loginRole, setLoginRole] = useState("user");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const result = await login(identifier, password);
+    const result = await login(identifier, password, loginRole);
 
     if (!result.ok) {
       setError(result.message);
@@ -24,15 +25,34 @@ export default function Login({ setAuthRoute }) {
         <p className="eyebrow">Welcome back</p>
         <h1>Login to Reality Engine X</h1>
 
-        <div className="demo-credentials">
-          <span>Demo user</span>
-          <strong>{account.username}</strong>
-          <span>Demo pass</span>
-          <strong>{account.password}</strong>
+        <div className="role-selector" aria-label="Choose login type">
+          <button
+            className={loginRole === "user" ? "active" : ""}
+            type="button"
+            onClick={() => {
+              setLoginRole("user");
+              setError("");
+            }}
+          >
+            User
+          </button>
+          <button
+            className={loginRole === "admin" ? "active" : ""}
+            type="button"
+            onClick={() => {
+              setLoginRole("admin");
+              setIdentifier("admin");
+              setError("");
+            }}
+          >
+            Admin
+          </button>
         </div>
 
         <Input
           label="Username or email"
+          autoComplete="username"
+          placeholder={loginRole === "admin" ? "admin" : "Your username or email"}
           value={identifier}
           onChange={(event) => {
             setIdentifier(event.target.value);
@@ -42,6 +62,7 @@ export default function Login({ setAuthRoute }) {
         <Input
           label="Password"
           type="password"
+          autoComplete="current-password"
           value={password}
           error={error}
           onChange={(event) => {

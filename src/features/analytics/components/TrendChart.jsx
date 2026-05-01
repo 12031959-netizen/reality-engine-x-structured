@@ -15,7 +15,10 @@ export default function TrendChart({ data }) {
       <article className="panel chart-panel">
         <p className="eyebrow">Signals</p>
         <h2>Weekly Trend</h2>
-        <p>Save a daily check-in before analytics can draw a trend.</p>
+        <p>
+          Save a daily check-in or upload wearable data before analytics can
+          draw a trend.
+        </p>
       </article>
     );
   }
@@ -25,7 +28,7 @@ export default function TrendChart({ data }) {
       <div className="panel-header">
         <div>
           <p className="eyebrow">Signals</p>
-          <h2>Your Entered Data</h2>
+          <h2>Your Entered and Uploaded Data</h2>
         </div>
       </div>
 
@@ -35,14 +38,30 @@ export default function TrendChart({ data }) {
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
             <XAxis dataKey="day" />
             <YAxis yAxisId="score" domain={[0, 10]} />
-            <YAxis yAxisId="calories" orientation="right" hide />
+            <YAxis yAxisId="largeValues" orientation="right" hide />
             <Tooltip />
             <Legend />
             <Line
-              yAxisId="calories"
+              yAxisId="largeValues"
               type="monotone"
               dataKey="calories"
               stroke="#38bdf8"
+              strokeWidth={3}
+              dot={{ r: 5 }}
+            />
+            <Line
+              yAxisId="largeValues"
+              type="monotone"
+              dataKey="steps"
+              stroke="#8b5cf6"
+              strokeWidth={3}
+              dot={{ r: 5 }}
+            />
+            <Line
+              yAxisId="largeValues"
+              type="monotone"
+              dataKey="heartRate"
+              stroke="#ef4444"
               strokeWidth={3}
               dot={{ r: 5 }}
             />

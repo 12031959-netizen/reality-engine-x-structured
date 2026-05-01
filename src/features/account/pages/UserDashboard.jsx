@@ -120,20 +120,16 @@ export default function UserDashboard() {
 
         <article className="panel">
           <p className="eyebrow">Current access</p>
-          <h2>{account.name}</h2>
+          <h2>{account.name || "Account"}</h2>
 
           <div className="credential-list">
             <div>
               <span>Username</span>
-              <strong>{account.username}</strong>
+              <strong>{account.username || "Not set"}</strong>
             </div>
             <div>
               <span>Email</span>
-              <strong>{account.email}</strong>
-            </div>
-            <div>
-              <span>Password</span>
-              <strong>{account.password}</strong>
+              <strong>{account.email || "Not set"}</strong>
             </div>
           </div>
         </article>

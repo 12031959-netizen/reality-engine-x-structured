@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
 
 const searchHints = {
+  admin: "admin users dashboards accounts overview all users",
   dashboard: "overview score calories protein sleep water risk",
   checkin: "daily check in mood food calories protein water sleep stress cravings notes",
   wearable: "wearable phone apple watch health bluetooth heart rate steps active minutes",
@@ -27,16 +28,18 @@ export default function Header({
   const { account, logout, user } = useAuth();
   const { toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
+  const notificationSource = user?.role === "admin" ? user : account;
   const notificationCount =
-    account.notificationLog?.findIndex(
-      (item) => item.id === account.lastSeenNotificationId
+    notificationSource.notificationLog?.findIndex(
+      (item) => item.id === notificationSource.lastSeenNotificationId
     ) ?? -1;
   const unreadNotificationCount =
     notificationCount === -1
-      ? account.notificationLog?.length || 0
+      ? notificationSource.notificationLog?.length || 0
       : notificationCount;
 
   const currentRoute = routes.find((route) => route.key === activeRoute);
+  const hasNotificationsRoute = routes.some((route) => route.key === "notifications");
   const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -117,23 +120,25 @@ export default function Header({
           <Moon size={19} />
         </button>
 
-        <button
-          className="icon-button notification-button"
-          onClick={() => setActiveRoute("notifications")}
-          aria-label={`Notifications (${unreadNotificationCount})`}
-        >
-          <Bell size={19} />
-          {unreadNotificationCount > 0 && (
-            <span className="notification-badge">
-              {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
-            </span>
-          )}
-        </button>
+        {hasNotificationsRoute && (
+          <button
+            className="icon-button notification-button"
+            onClick={() => setActiveRoute("notifications")}
+            aria-label={`Notifications (${unreadNotificationCount})`}
+          >
+            <Bell size={19} />
+            {unreadNotificationCount > 0 && (
+              <span className="notification-badge">
+                {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+              </span>
+            )}
+          </button>
+        )}
 
         <button
           className="user-pill"
           type="button"
-          onClick={() => setActiveRoute("account")}
+          onClick={() => setActiveRoute(user?.role === "admin" ? "admin" : "account")}
           aria-label="Open user dashboard"
         >
           <div className="avatar">{user?.name?.charAt(0) || "U"}</div>
