@@ -5,6 +5,7 @@ import { apiClient } from "../../services/apiClient";
 export const AuthContext = createContext(null);
 
 const STORAGE_KEY = "reality-engine-x-account";
+const USERS_STORAGE_KEY = "reality-engine-x-users";
 const ONE_HOUR = 60 * 60 * 1000;
 
 const defaultPreferences = {
@@ -72,12 +73,87 @@ function loadAccount() {
   }
 }
 
+function loadLocalUsers() {
+  try {
+    const storedUsers = window.localStorage.getItem(USERS_STORAGE_KEY);
+    const parsedUsers = storedUsers ? JSON.parse(storedUsers) : [];
+    const users = Array.isArray(parsedUsers) ? parsedUsers : [];
+    const currentAccount = loadAccount();
+    const shouldIncludeCurrent =
+      currentAccount?.id &&
+      currentAccount.role !== "admin" &&
+      !users.some((account) => account.id === currentAccount.id);
+
+    return shouldIncludeCurrent ? [...users, currentAccount] : users;
+  } catch {
+    return [];
+  }
+}
+
 function saveAccount(account) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(account));
   } catch {
     // Local storage can be unavailable in private or restricted browsers.
   }
+}
+
+function saveLocalUsers(accounts) {
+  try {
+    window.localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(accounts));
+  } catch {
+    // Local storage can be unavailable in private or restricted browsers.
+  }
+}
+
+function upsertLocalUser(account) {
+  if (!account?.id || account.role === "admin") return;
+
+  const users = loadLocalUsers();
+  const nextUsers = [
+    account,
+    ...users.filter((storedAccount) => storedAccount.id !== account.id)
+  ];
+
+  saveLocalUsers(nextUsers);
+}
+
+function findLocalUser(identifier) {
+  const normalizedIdentifier = identifier.trim().toLowerCase();
+
+  return loadLocalUsers().find(
+    (storedAccount) =>
+      storedAccount.username?.toLowerCase() === normalizedIdentifier ||
+      storedAccount.email?.toLowerCase() === normalizedIdentifier
+  );
+}
+
+function createCleanUserAccount(payload) {
+  return {
+    id: `user-${Date.now()}`,
+    role: "user",
+    name: payload.name || "",
+    username: payload.username || "",
+    email: payload.email || "",
+    password: payload.password || "",
+    age: "",
+    goal: "",
+    heightCm: "",
+    weightKg: "",
+    targetWeightKg: "",
+    activityLevel: "",
+    dailyCaloriesTarget: "",
+    proteinTarget: "",
+    preferences: defaultPreferences,
+    notificationLog: [],
+    dailyHistory: [],
+    dailyCheckIn: null,
+    previousDailyCheckIn: null,
+    wearableData: null,
+    dietProfile: {
+      completed: false
+    }
+  };
 }
 
 async function syncAccountToBackend(account) {
@@ -293,6 +369,7 @@ export function AuthProvider({ children }) {
       setAccount(result.account);
       if (result.account.role !== "admin") {
         saveAccount(result.account);
+        upsertLocalUser(result.account);
       }
       setUser(result.account);
       return { ok: true };
@@ -324,18 +401,23 @@ export function AuthProvider({ children }) {
       };
     }
 
+    const localUser = findLocalUser(identifier);
+    const fallbackAccount = localUser || account;
     const matchesIdentifier =
-      account.username.toLowerCase() === normalizedIdentifier ||
-      account.email.toLowerCase() === normalizedIdentifier;
+      fallbackAccount.username.toLowerCase() === normalizedIdentifier ||
+      fallbackAccount.email.toLowerCase() === normalizedIdentifier;
 
-    if (!matchesIdentifier || account.password !== password) {
+    if (!matchesIdentifier || fallbackAccount.password !== password) {
       return {
         ok: false,
         message: "Username/email or password is incorrect."
       };
     }
 
-    setUser(account);
+    setAccount(fallbackAccount);
+    saveAccount(fallbackAccount);
+    upsertLocalUser(fallbackAccount);
+    setUser(fallbackAccount);
     return { ok: true };
   }
 
@@ -345,6 +427,7 @@ export function AuthProvider({ children }) {
 
       setAccount(result.account);
       saveAccount(result.account);
+      upsertLocalUser(result.account);
       setUser(result.account);
       return { ok: true };
     } catch (error) {
@@ -356,26 +439,20 @@ export function AuthProvider({ children }) {
       }
     }
 
-    const nextAccount = {
-      ...account,
-      ...payload,
-      id: `user-${Date.now()}`,
-      role: "user",
-      age: "",
-      goal: "",
-      heightCm: "",
-      weightKg: "",
-      targetWeightKg: "",
-      activityLevel: "",
-      dailyCaloriesTarget: "",
-      proteinTarget: "",
-      dietProfile: {
-        completed: false
-      }
-    };
+    const localExistingAccount = findLocalUser(payload.username) || findLocalUser(payload.email);
+
+    if (localExistingAccount) {
+      return {
+        ok: false,
+        message: "Username or email already exists."
+      };
+    }
+
+    const nextAccount = createCleanUserAccount(payload);
 
     setAccount(nextAccount);
     saveAccount(nextAccount);
+    upsertLocalUser(nextAccount);
     syncAccountToBackend(nextAccount);
     setUser(nextAccount);
     return { ok: true };
@@ -389,6 +466,7 @@ export function AuthProvider({ children }) {
 
     setAccount(nextAccount);
     saveAccount(nextAccount);
+    upsertLocalUser(nextAccount);
     syncAccountToBackend(nextAccount);
     setUser((currentUser) => (currentUser ? nextAccount : currentUser));
     return { ok: true };

@@ -11,6 +11,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { apiClient } from "../../../services/apiClient";
 
 const LOCAL_ACCOUNT_KEY = "reality-engine-x-account";
+const LOCAL_USERS_KEY = "reality-engine-x-users";
 
 function safeNumber(value) {
   const number = Number(value);
@@ -39,6 +40,28 @@ function loadLocalUser() {
     return removePassword(account);
   } catch {
     return null;
+  }
+}
+
+function loadLocalUsers() {
+  try {
+    const users = JSON.parse(window.localStorage.getItem(LOCAL_USERS_KEY) || "[]");
+    const currentUser = loadLocalUser();
+    const localUsers = Array.isArray(users)
+      ? users.filter((account) => account.role !== "admin").map(removePassword)
+      : [];
+
+    if (
+      currentUser &&
+      !localUsers.some((account) => account.id === currentUser.id)
+    ) {
+      return [currentUser, ...localUsers];
+    }
+
+    return localUsers;
+  } catch {
+    const currentUser = loadLocalUser();
+    return currentUser ? [currentUser] : [];
   }
 }
 
@@ -99,14 +122,13 @@ export default function AdminDashboard() {
           : "No users have been created yet."
       );
     } catch {
-      const localUser = loadLocalUser();
-      const users = localUser ? [localUser] : [];
+      const users = loadLocalUsers();
 
       setAccounts(users);
       setSelectedId((current) => current || users[0]?.id || "");
       setStatus(
-        localUser
-          ? "Backend is offline. Showing the locally saved user from this browser."
+        users.length
+          ? "Backend is offline. Showing locally saved users from this browser."
           : "Backend is offline and no local user was found."
       );
     }
