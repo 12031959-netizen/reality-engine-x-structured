@@ -2,6 +2,7 @@ export function analyzeBehavior(healthData) {
   const insights = [];
   const calories = healthData.calories.consumed;
   const calorieTarget = healthData.calories.target;
+  const calorieGoal = healthData.calories.goal;
   const protein = healthData.protein.consumed;
   const proteinTarget = healthData.protein.target;
 
@@ -21,7 +22,9 @@ export function analyzeBehavior(healthData) {
             : "High",
       description:
         calorieTarget
-          ? `Your calories are ${Math.abs(calorieGap)}% ${calorieGap >= 0 ? "above" : "below"} the target estimated from your diet profile.`
+          ? calorieGoal === "Fat loss" && calorieGap > 0
+            ? `Fat loss needs a calorie deficit, but your calories are ${calorieGap}% above the target.`
+            : `Your calories are ${Math.abs(calorieGap)}% ${calorieGap >= 0 ? "above" : "below"} the target estimated from your diet profile.`
           : "Calories were entered, but a target could not be calculated because profile data is incomplete."
     });
   }

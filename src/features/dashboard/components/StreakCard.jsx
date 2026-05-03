@@ -1,6 +1,8 @@
 import { Flame } from "lucide-react";
 
-export default function StreakCard({ hasCheckIn }) {
+export default function StreakCard({ streakDays }) {
+  const hasStreak = streakDays > 0;
+
   return (
     <article className="panel streak-card">
       <div className="streak-icon">
@@ -9,10 +11,14 @@ export default function StreakCard({ hasCheckIn }) {
 
       <div>
         <p className="eyebrow">Consistency streak</p>
-        <h2>{hasCheckIn ? "1 day" : "Not started"}</h2>
+        <h2>
+          {hasStreak
+            ? `${streakDays} ${streakDays === 1 ? "day" : "days"}`
+            : "Not started"}
+        </h2>
         <p>
-          {hasCheckIn
-            ? "Your streak starts from the check-ins you actually saved."
+          {hasStreak
+            ? "Your streak includes consecutive daily check-ins through today."
             : "Complete a daily check-in to start tracking consistency."}
         </p>
       </div>

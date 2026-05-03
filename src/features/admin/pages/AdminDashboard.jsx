@@ -12,6 +12,7 @@ import { apiClient } from "../../../services/apiClient";
 
 const LOCAL_ACCOUNT_KEY = "reality-engine-x-account";
 const LOCAL_USERS_KEY = "reality-engine-x-users";
+const LOCAL_FEEDBACK_KEY = "reality-engine-x-feedback";
 
 function safeNumber(value) {
   const number = Number(value);
@@ -65,6 +66,18 @@ function loadLocalUsers() {
   }
 }
 
+function loadLocalFeedback() {
+  try {
+    const feedback = JSON.parse(
+      window.localStorage.getItem(LOCAL_FEEDBACK_KEY) || "[]"
+    );
+
+    return Array.isArray(feedback) ? feedback : [];
+  } catch {
+    return [];
+  }
+}
+
 function getLatestRecord(account) {
   const history = [...(account.dailyHistory || [])].sort((a, b) =>
     b.date.localeCompare(a.date)
@@ -104,6 +117,7 @@ function calculateRisk(account) {
 export default function AdminDashboard() {
   const { logout } = useAuth();
   const [accounts, setAccounts] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [status, setStatus] = useState("Loading users...");
 
@@ -112,9 +126,11 @@ export default function AdminDashboard() {
 
     try {
       const result = await apiClient.get("/admin/accounts");
+      const feedbackResult = await apiClient.get("/feedback");
       const users = result.accounts || [];
 
       setAccounts(users);
+      setFeedback(feedbackResult.feedback || []);
       setSelectedId((current) => current || users[0]?.id || "");
       setStatus(
         users.length
@@ -123,8 +139,10 @@ export default function AdminDashboard() {
       );
     } catch {
       const users = loadLocalUsers();
+      const localFeedback = loadLocalFeedback();
 
       setAccounts(users);
+      setFeedback(localFeedback);
       setSelectedId((current) => current || users[0]?.id || "");
       setStatus(
         users.length
@@ -151,6 +169,15 @@ export default function AdminDashboard() {
     (total, account) => total + calculateCompletion(account),
     0
   );
+  const selectedFeedback = selectedAccount
+    ? feedback.filter((item) => {
+        return (
+          item.accountId === selectedAccount.id ||
+          item.author === selectedAccount.name ||
+          item.author === profile.personName
+        );
+      })
+    : [];
 
   return (
     <div className="page-stack">
@@ -194,6 +221,12 @@ export default function AdminDashboard() {
           label="Data coverage"
           value={`${completionTotal}/${accounts.length * 3 || 0}`}
           text="Profile, check-in, wearable"
+        />
+        <AdminStat
+          icon={BarChart3}
+          label="Feedback"
+          value={feedback.length}
+          text="Messages written by users"
         />
       </section>
 
@@ -326,6 +359,35 @@ export default function AdminDashboard() {
                     </strong>
                   </div>
                 ))}
+              </div>
+            </article>
+
+            <article className="panel">
+              <p className="eyebrow">User feedback</p>
+              <h2>{selectedFeedback.length} message(s)</h2>
+
+              <div className="feedback-list">
+                {selectedFeedback.length === 0 ? (
+                  <div className="feedback-empty">
+                    No feedback written by this user yet.
+                  </div>
+                ) : (
+                  selectedFeedback.map((item) => (
+                    <div className="feedback-item" key={item.id}>
+                      <div className="feedback-item-header">
+                        <div>
+                          <strong>{item.title}</strong>
+                          <span>{item.type}</span>
+                        </div>
+                        <b>{item.rating}/5</b>
+                      </div>
+                      <p>{item.message}</p>
+                      <small>
+                        {item.author} - {item.createdAt}
+                      </small>
+                    </div>
+                  ))
+                )}
               </div>
             </article>
           </section>

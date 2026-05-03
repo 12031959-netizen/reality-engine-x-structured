@@ -2,6 +2,7 @@ export function generateFailureReasons(healthData) {
   const reasons = [];
   const calories = healthData.calories.consumed;
   const calorieTarget = healthData.calories.target;
+  const calorieGoal = healthData.calories.goal;
   const protein = healthData.protein.consumed;
   const proteinTarget = healthData.protein.target;
 
@@ -14,9 +15,14 @@ export function generateFailureReasons(healthData) {
   }
 
   if (calories && calorieTarget) {
-    const calorieGap = Math.abs(calories - calorieTarget) / calorieTarget;
+    const calorieDifference = calories - calorieTarget;
+    const calorieGap = Math.abs(calorieDifference) / calorieTarget;
 
-    if (calorieGap > 0.2) {
+    if (calorieGoal === "Fat loss" && calorieDifference > 0) {
+      reasons.push(
+        `Fat loss needs a calorie deficit, but calories are ${Math.round(calorieGap * 100)}% above target.`
+      );
+    } else if (calorieGap > 0.2) {
       reasons.push("Calories are far from the target estimated for this diet plan.");
     } else if (calorieGap > 0.1) {
       reasons.push("Calories are slightly outside the target range.");

@@ -7,6 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "data");
 const DB_PATH = join(DATA_DIR, "db.json");
 const PORT = Number(process.env.PORT || 5000);
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
 const defaultAccount = {
   id: "user-001",
@@ -184,6 +185,74 @@ function updateAccount(database, accountId, updater) {
   return nextAccount;
 }
 
+function buildAiDietInstructions(accountContext = {}) {
+  return [
+    "You are Reality Engine X's real AI Diet Assistant.",
+    "Answer the user's diet, food, calorie, protein, BMR, weight goal, health habit, and meal-planning questions.",
+    "Use the provided user context when available: diet profile, latest daily check-in, wearable data, BMR targets, and goals.",
+    "Be practical, specific, and explain calculations clearly.",
+    "Do not diagnose disease or replace a doctor. For medical symptoms, medication, eating disorders, pregnancy, diabetes, heart disease, kidney disease, or severe restriction, tell the user to consult a qualified clinician.",
+    "If data is missing, say what data is missing and how it affects the answer.",
+    "Prefer concise answers with numbers, next steps, and safe assumptions.",
+    `User context JSON: ${JSON.stringify(accountContext)}`
+  ].join("\n");
+}
+
+function extractOpenAiText(data) {
+  if (data.output_text) return data.output_text;
+
+  return (data.output || [])
+    .flatMap((item) => item.content || [])
+    .map((content) => content.text || "")
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+async function createAiDietReply({ message, messages = [], accountContext = {} }) {
+  if (!process.env.OPENAI_API_KEY) {
+    const error = new Error(
+      "OpenAI API key is missing. Add OPENAI_API_KEY before starting the backend."
+    );
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const recentConversation = messages
+    .slice(-8)
+    .map((item) => `${item.role === "assistant" ? "Assistant" : "User"}: ${item.text}`)
+    .join("\n");
+  const input = [
+    recentConversation ? `Recent conversation:\n${recentConversation}` : "",
+    `User question:\n${message}`
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const aiResponse = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      instructions: buildAiDietInstructions(accountContext),
+      input
+    })
+  });
+
+  const data = await aiResponse.json();
+
+  if (!aiResponse.ok) {
+    const error = new Error(data.error?.message || "AI request failed.");
+    error.statusCode = aiResponse.status;
+    throw error;
+  }
+
+  return extractOpenAiText(data) || "I could not generate an answer.";
+}
+
 async function handleRequest(request, response) {
   if (request.method === "OPTIONS") {
     sendNoContent(response);
@@ -200,6 +269,32 @@ async function handleRequest(request, response) {
     }
 
     const database = await readDatabase();
+
+    if (request.method === "POST" && url.pathname === "/ai/diet-chat") {
+      const payload = await readBody(request);
+      const message = String(payload.message || "").trim();
+
+      if (!message) {
+        sendJson(response, 400, {
+          ok: false,
+          message: "Message is required."
+        });
+        return;
+      }
+
+      const reply = await createAiDietReply({
+        message,
+        messages: payload.messages,
+        accountContext: payload.accountContext
+      });
+
+      sendJson(response, 200, {
+        ok: true,
+        reply,
+        model: OPENAI_MODEL
+      });
+      return;
+    }
 
     if (request.method === "POST" && url.pathname === "/auth/login") {
       const { identifier = "", password = "" } = await readBody(request);
@@ -366,6 +461,7 @@ async function handleRequest(request, response) {
           createdAt: new Date().toISOString(),
           ...payload
         };
+        feedback.accountId = accountId;
 
         database.feedback.unshift(feedback);
         await writeDatabase(database);

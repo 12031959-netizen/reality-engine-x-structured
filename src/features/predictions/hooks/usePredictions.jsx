@@ -1,4 +1,5 @@
 import { useAuth } from "../../../hooks/useAuth";
+import { getLocalDateKey } from "../../../utils/dateKeys";
 
 function clamp(value) {
   return Math.max(0, Math.min(100, Math.round(value)));
@@ -157,7 +158,7 @@ function buildPredictions(checkIn, profile, wearableData) {
 
 export function usePredictions() {
   const { account } = useAuth();
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey();
   const latestRecord = getLatestRecord(account, todayKey);
   const predictions = buildPredictions(
     latestRecord.checkIn,

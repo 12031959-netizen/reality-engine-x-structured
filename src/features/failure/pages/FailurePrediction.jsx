@@ -7,6 +7,7 @@ import ScenarioSimulator from "../components/ScenarioSimulator";
 import FailureSystemFlow from "../components/FailureSystemFlow";
 import InterventionPlan from "../components/InterventionPlan";
 import SignalMonitor from "../components/SignalMonitor";
+import BmrPlanCard from "../components/BmrPlanCard";
 import { useFailurePrediction } from "../hooks/useFailurePrediction";
 
 export default function FailurePrediction({ setActiveRoute }) {
@@ -40,6 +41,8 @@ export default function FailurePrediction({ setActiveRoute }) {
       ) : (
         <>
           <FailureRiskCard score={score} level={level} />
+
+          <BmrPlanCard healthData={healthData} />
 
           <SignalMonitor healthData={healthData} />
 

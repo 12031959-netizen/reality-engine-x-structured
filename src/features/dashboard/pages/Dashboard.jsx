@@ -11,6 +11,7 @@ import {
 import SectionHeader from "../../../components/shared/SectionHeader";
 import Button from "../../../components/ui/Button";
 import { useAuth } from "../../../hooks/useAuth";
+import { addDaysToDateKey, getLocalDateKey } from "../../../utils/dateKeys";
 import StatCard from "../components/StatCard";
 import HealthScoreCard from "../components/HealthScoreCard";
 import StreakCard from "../components/StreakCard";
@@ -70,15 +71,40 @@ function calculateRisk(checkIn) {
   };
 }
 
+function calculateCheckInStreak(account, todayKey) {
+  const checkInDates = new Set(
+    (account.dailyHistory || [])
+      .filter((record) => record.date && record.checkIn)
+      .map((record) => record.date)
+  );
+
+  if (account.dailyCheckIn?.savedAt) {
+    checkInDates.add(account.dailyCheckIn.checkInDate || todayKey);
+  }
+
+  if (!checkInDates.has(todayKey)) return 0;
+
+  let streak = 0;
+  let currentDateKey = todayKey;
+
+  while (checkInDates.has(currentDateKey)) {
+    streak += 1;
+    currentDateKey = addDaysToDateKey(currentDateKey, -1);
+  }
+
+  return streak;
+}
+
 export default function Dashboard({ setActiveRoute }) {
   const { account } = useAuth();
   const profile = account.dietProfile || {};
   const checkIn = account.dailyCheckIn;
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey();
   const hasCheckIn = Boolean(checkIn?.savedAt && checkIn.checkInDate === todayKey);
   const todayCheckIn = hasCheckIn ? checkIn : null;
   const score = calculateScore(todayCheckIn);
   const risk = calculateRisk(todayCheckIn);
+  const streakDays = calculateCheckInStreak(account, todayKey);
 
   return (
     <div className="page-stack">
@@ -184,7 +210,7 @@ export default function Dashboard({ setActiveRoute }) {
       </section>
 
       <section className="two-column">
-        <StreakCard hasCheckIn={hasCheckIn} />
+        <StreakCard streakDays={streakDays} />
 
         <article className="panel">
           <p className="eyebrow">Data source</p>

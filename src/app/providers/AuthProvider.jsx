@@ -1,6 +1,7 @@
 import { createContext, useEffect, useMemo, useState } from "react";
 import { mockUser } from "../../data/mockUser";
 import { apiClient } from "../../services/apiClient";
+import { getLocalDateKey } from "../../utils/dateKeys";
 
 export const AuthContext = createContext(null);
 
@@ -51,7 +52,7 @@ function migrateStarterAccount(account) {
 }
 
 function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return getLocalDateKey();
 }
 
 function loadAccount() {

@@ -1,4 +1,5 @@
 import { useAuth } from "../../../hooks/useAuth";
+import { getLocalDateKey } from "../../../utils/dateKeys";
 import {
   calculateRiskScore,
   getRiskLevel
@@ -6,9 +7,10 @@ import {
 import { analyzeBehavior } from "../logic/analyzeBehavior";
 import { generateFailureReasons } from "../logic/generateFailureReasons";
 
-function calculateCalorieTarget(account) {
+function calculateNutritionPlan(account) {
   const profile = account.dietProfile || {};
   const existingTarget = Number(account.dailyCaloriesTarget || profile.dailyCaloriesTarget);
+  const existingProteinTarget = Number(account.proteinTarget || profile.proteinTarget);
   const weight = Number(profile.currentWeightKg || account.weightKg);
   const height = Number(profile.heightCm || account.heightCm);
   const age = Number(profile.age || account.age);
@@ -16,8 +18,17 @@ function calculateCalorieTarget(account) {
   const activityLevel = profile.activityLevel || "Moderate";
   const goal = profile.goal || account.goal || "";
 
-  if (existingTarget > 0) return existingTarget;
-  if (!weight || !height || !age) return 0;
+  if (!weight || !height || !age) {
+    return {
+      bmr: 0,
+      maintenanceCalories: 0,
+      calorieTarget: existingTarget || 0,
+      proteinTarget: existingProteinTarget || 0,
+      proteinMultiplier: 0,
+      activityMultiplier: 0,
+      goal
+    };
+  }
 
   const bmr =
     gender === "Female"
@@ -31,41 +42,53 @@ function calculateCalorieTarget(account) {
       Athlete: 1.85
     }[activityLevel] || 1.45;
   const maintenance = bmr * activityMultiplier;
+  const proteinMultiplier =
+    goal === "Fat loss"
+      ? 2
+      : goal === "Lean bulk" || goal === "Muscle gain"
+        ? 1.8
+        : 1.6;
+  const calculatedProteinTarget = Math.round(weight * proteinMultiplier);
+  let calculatedCalorieTarget = Math.round(maintenance);
 
-  if (goal === "Fat loss") return Math.round(maintenance - 400);
-  if (goal === "Lean bulk" || goal === "Muscle gain") {
-    return Math.round(maintenance + 250);
+  if (goal === "Fat loss") {
+    calculatedCalorieTarget = Math.round(maintenance - 400);
   }
 
-  return Math.round(maintenance);
-}
+  if (goal === "Lean bulk" || goal === "Muscle gain") {
+    calculatedCalorieTarget = Math.round(maintenance + 250);
+  }
 
-function calculateProteinTarget(account) {
-  const profile = account.dietProfile || {};
-  const existingTarget = Number(account.proteinTarget || profile.proteinTarget);
-  const weight = Number(profile.currentWeightKg || account.weightKg);
-
-  if (existingTarget > 0) return existingTarget;
-  return weight ? Math.round(weight * 1.6) : 0;
+  return {
+    bmr: Math.round(bmr),
+    maintenanceCalories: Math.round(maintenance),
+    calorieTarget: existingTarget || calculatedCalorieTarget,
+    proteinTarget: existingProteinTarget || calculatedProteinTarget,
+    proteinMultiplier,
+    activityMultiplier,
+    goal
+  };
 }
 
 function buildHealthData(account) {
   const checkIn = account.dailyCheckIn;
   const wearableData = account.wearableData;
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey();
 
   if (!checkIn?.savedAt || checkIn.checkInDate !== todayKey) return null;
   const hasTodayWearableData =
     wearableData?.savedAt && wearableData.wearableDate === todayKey;
+  const nutritionPlan = calculateNutritionPlan(account);
 
   return {
     calories: {
       consumed: Number(checkIn.calories) || 0,
-      target: calculateCalorieTarget(account)
+      target: nutritionPlan.calorieTarget,
+      goal: nutritionPlan.goal
     },
     protein: {
       consumed: Number(checkIn.protein) || 0,
-      target: calculateProteinTarget(account)
+      target: nutritionPlan.proteinTarget
     },
     water: {
       consumed: Number(checkIn.water) || 0
@@ -92,6 +115,7 @@ function buildHealthData(account) {
         }
       : null,
     profile: account.dietProfile || {},
+    nutritionPlan,
     savedAt: checkIn.savedAt
   };
 }

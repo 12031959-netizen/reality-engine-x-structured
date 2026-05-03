@@ -11,6 +11,7 @@ const searchHints = {
   history: "daily history records saved check in wearable data every day calendar",
   analytics: "analytics chart progress trend score calories sleep mood",
   predictions: "predictions ai future risk recovery nutrition",
+  assistant: "ai assistant diet food calories protein bmr meal health chat calculator",
   failure: "failure risk diet fail stress cravings sleep action plan",
   account: "user password account profile saved information diet person",
   feedback: "feedback bug feature message rating",

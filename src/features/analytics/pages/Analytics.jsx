@@ -1,5 +1,6 @@
 import SectionHeader from "../../../components/shared/SectionHeader";
 import { useAuth } from "../../../hooks/useAuth";
+import { getLocalDateKey } from "../../../utils/dateKeys";
 import TrendChart from "../components/TrendChart";
 import ProgressChart from "../components/ProgressChart";
 
@@ -105,7 +106,7 @@ function buildAnalyticsData(account, todayKey) {
 
 export default function Analytics() {
   const { account } = useAuth();
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey();
   const analyticsData = buildAnalyticsData(account, todayKey);
   const latest = analyticsData.at(-1);
   const profile = account.dietProfile || {};

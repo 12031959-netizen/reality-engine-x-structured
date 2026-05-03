@@ -11,10 +11,12 @@ import AboutUs from "../features/about/pages/AboutUs";
 import NotificationCenter from "../features/notifications/components/NotificationCenter";
 import Settings from "../features/settings/pages/Settings";
 import AdminDashboard from "../features/admin/pages/AdminDashboard";
+import DietAssistant from "../features/assistant/pages/DietAssistant";
 import {
   Activity,
   BarChart3,
   BellRing,
+  Bot,
   Brain,
   CalendarDays,
   ClipboardCheck,
@@ -76,6 +78,13 @@ const routes = [
     label: "Predictions",
     icon: Brain,
     component: Predictions,
+    roles: ["user"]
+  },
+  {
+    key: "assistant",
+    label: "AI Assistant",
+    icon: Bot,
+    component: DietAssistant,
     roles: ["user"]
   },
   {

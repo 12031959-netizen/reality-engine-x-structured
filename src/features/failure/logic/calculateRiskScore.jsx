@@ -7,6 +7,7 @@ export function calculateRiskScore(healthData) {
   const cravings = healthData.cravings.score;
   const calories = healthData.calories.consumed;
   const calorieTarget = healthData.calories.target;
+  const calorieGoal = healthData.calories.goal;
   const protein = healthData.protein.consumed;
   const proteinTarget = healthData.protein.target;
 
@@ -14,13 +15,31 @@ export function calculateRiskScore(healthData) {
     calories && calorieTarget
       ? Math.abs(calories - calorieTarget) / calorieTarget
       : 1;
+  const calorieOverTarget =
+    calories && calorieTarget ? Math.max(0, calories - calorieTarget) : 0;
+  const calorieOverRatio =
+    calorieOverTarget && calorieTarget ? calorieOverTarget / calorieTarget : 0;
   const proteinGap =
     protein && proteinTarget
       ? Math.max(0, proteinTarget - protein) / proteinTarget
       : 1;
 
   const calorieRisk =
-    calorieGap >= 0.35 ? 18 : calorieGap >= 0.2 ? 12 : calorieGap >= 0.1 ? 6 : 2;
+    calorieGoal === "Fat loss" && calorieOverRatio > 0
+      ? calorieOverRatio >= 0.35
+        ? 42
+        : calorieOverRatio >= 0.2
+          ? 32
+          : calorieOverRatio >= 0.1
+            ? 18
+            : 8
+      : calorieGap >= 0.35
+        ? 22
+        : calorieGap >= 0.2
+          ? 14
+          : calorieGap >= 0.1
+            ? 7
+            : 2;
   const proteinRisk =
     proteinGap >= 0.5 ? 16 : proteinGap >= 0.25 ? 10 : proteinGap > 0 ? 6 : 2;
   const missingNutritionRisk = calories > 0 && protein > 0 ? 0 : 14;
