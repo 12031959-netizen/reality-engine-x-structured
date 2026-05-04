@@ -6,12 +6,13 @@ import ForgotPassword from "../features/auth/pages/ForgotPassword";
 import Login from "../features/auth/pages/Login";
 import Onboarding from "../features/onboarding/pages/Onboarding";
 import Signup from "../features/auth/pages/Signup";
+import Welcome from "../features/auth/pages/Welcome";
 import { useAuth } from "../hooks/useAuth";
 
 export default function App() {
   const { user } = useAuth();
   const [activeRoute, setActiveRoute] = useState("dashboard");
-  const [authRoute, setAuthRoute] = useState("login");
+  const [authRoute, setAuthRoute] = useState("welcome");
   const userRole = user?.role === "admin" ? "admin" : "user";
   const availableRoutes = useMemo(() => {
     return routes.filter((route) => !route.roles || route.roles.includes(userRole));
@@ -44,7 +45,9 @@ export default function App() {
         ? Signup
         : authRoute === "forgot"
           ? ForgotPassword
-          : Login;
+          : authRoute === "login"
+            ? Login
+            : Welcome;
 
     return <AuthPage setAuthRoute={setAuthRoute} />;
   }
